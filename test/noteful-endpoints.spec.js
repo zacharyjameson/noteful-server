@@ -1,10 +1,10 @@
-const { expect } = require("chai");
 const knex = require("knex");
 const supertest = require("supertest");
 const app = require("../src/app");
+const { expect } = require("chai");
 const { makeFolderArray } = require("./folder-fixtures");
 
-describe("Noteful Endpoints", function () {
+describe("Folders Endpoints", function () {
   let db;
 
   before("make knex instance", () => {
@@ -17,33 +17,36 @@ describe("Noteful Endpoints", function () {
 
   after("disconnect from db", () => db.destroy());
 
-  before("clean the table", () => db("noteful_folder").truncate());
+  before("clean the table", () =>
+    db.raw("TRUNCATE noteful_folder, noteful_note RESTART IDENTITY CASCADE")
+  );
 
-  afterEach("cleanup", () => db("noteful_folder").truncate());
+  afterEach("cleanup", () =>
+    db.raw("TRUNCATE noteful_folder, noteful_note RESTART IDENTITY CASCADE")
+  );
 
-  describe("GET /api/folder", () => {
-    context("Given there are no folders", () => {
-      it("responds with 200 and an empty list", () => {
+  describe(`GET /api/folder`, () => {
+    context(`Given no folders`, () => {
+      it(`responds with 200 and an empty list`, () => {
         return supertest(app).get("/api/folder").expect(200, []);
       });
     });
 
-    context("Given there are folders in db", () => {
+    context(`Given there are folders in the database`, () => {
       const testFolders = makeFolderArray();
 
       beforeEach("insert folder", () => {
-        return db.into("noteful_folder").insert(testFolders);
+        return db.into("noteful_folders").insert(testFolders);
       });
-
-      it("responds with 200 and all of the folders", () => {
+      it(`responds with 200 and all of the folders`, () => {
         return supertest(app).get("/api/folder").expect(200, testFolders);
       });
     });
   });
 
-  describe("GET /api/folder/:folder_id", () => {
-    context("Given there are no folders", () => {
-      it("responds with 404", () => {
+  describe(`GET /api/folder/:folder_id`, () => {
+    context(`Given no folders`, () => {
+      it(`responds with 404`, () => {
         const folderId = 123456;
         return supertest(app)
           .get(`/api/folder/${folderId}`)
@@ -51,16 +54,16 @@ describe("Noteful Endpoints", function () {
       });
     });
 
-    context("Given there are folders in the db", () => {
+    context("Given there are folders in the database", () => {
       const testFolders = makeFolderArray();
 
       beforeEach("insert folders", () => {
-        return db.into("noteful_folder").insert(testFolders);
+        return db.into("noteful_folders").insert(testFolders);
       });
-
-      it("responds with 200 and the specified folder", () => {
+      it(`responds with 200 and the specified folder`, () => {
         const folderId = 2;
         const expectedFolder = testFolders[folderId - 1];
+
         return supertest(app)
           .get(`/api/folder/${folderId}`)
           .expect(200, expectedFolder);
@@ -69,10 +72,11 @@ describe("Noteful Endpoints", function () {
   });
 
   describe("POST /api/folder", () => {
-    it("creates a folder, responding with 201 and the new folder", () => {
+    it(`creates a folder, responding with 201 and the new folder`, () => {
       const newFolder = {
-        folder_name: "New Test Folder",
+        folder_name: "Test folder that's new",
       };
+
       return supertest(app)
         .post("/api/folder")
         .send(newFolder)
@@ -91,7 +95,7 @@ describe("Noteful Endpoints", function () {
 
     requiredFields.forEach((field) => {
       const newFolders = {
-        folder_name: "Test Folder",
+        folder_name: "Test folder that's new",
       };
 
       it(`Responds with 400 and an error when the ${field} is missing`, () => {
@@ -101,36 +105,37 @@ describe("Noteful Endpoints", function () {
           .post("/api/folder")
           .send(newFolders)
           .expect(400, {
-            error: { message: `Missing ${field} in request body` },
+            error: { message: `Missing '${field}' in request body` },
           });
       });
     });
   });
 
-  describe("DELETE /api/folder/:folder_id", () => {
-    context("Given no folders", () => {
-      it("Responds with 404", () => {
+  describe(`DELETE /api/folder/:folder_id`, () => {
+    context(`Given no folders`, () => {
+      it(`responds with 404`, () => {
         const folderId = 123456;
+
         return supertest(app)
           .delete(`/api/folder/${folderId}`)
           .expect(404, { error: { message: `Folder doesn't exist` } });
       });
     });
 
-    context("Given there are folders in the db", () => {
+    context(`Given there are folders in the database`, () => {
       const testFolders = makeFolderArray();
 
       beforeEach("insert folder", () => {
-        return db.into("noteful_folder").insert(testFolders);
+        return db.into("noteful_folders").insert(testFolders);
       });
 
-      it("Responds with 204 and then removes the folder", () => {
-        const idToRemove = 2;
+      it("Responds with 204 and then removes the folders", () => {
+        const folderToRemove = 2;
         const expectedFolder = testFolders.filter(
-          (folder) => folder.id !== idToRemove
+          (folder) => folder.id !== folderToRemove
         );
         return supertest(app)
-          .delete(`/api/folder/${idToRemove}`)
+          .delete(`/api/folder/${folderToRemove}`)
           .expect(204)
           .then((res) => {
             supertest(app).get("/api/folder").expect(expectedFolder);
