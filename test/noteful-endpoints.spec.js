@@ -36,7 +36,7 @@ describe("Folders Endpoints", function () {
       const testFolders = makeFolderArray();
 
       beforeEach("insert folder", () => {
-        return db.into("noteful_folders").insert(testFolders);
+        return db.into("noteful_folder").insert(testFolders);
       });
       it(`responds with 200 and all of the folders`, () => {
         return supertest(app).get("/api/folder").expect(200, testFolders);
@@ -58,7 +58,7 @@ describe("Folders Endpoints", function () {
       const testFolders = makeFolderArray();
 
       beforeEach("insert folders", () => {
-        return db.into("noteful_folders").insert(testFolders);
+        return db.into("noteful_folder").insert(testFolders);
       });
       it(`responds with 200 and the specified folder`, () => {
         const folderId = 2;
@@ -105,7 +105,7 @@ describe("Folders Endpoints", function () {
           .post("/api/folder")
           .send(newFolders)
           .expect(400, {
-            error: { message: `Missing '${field}' in request body` },
+            error: { message: `Missing ${field} in request body` },
           });
       });
     });
@@ -126,7 +126,7 @@ describe("Folders Endpoints", function () {
       const testFolders = makeFolderArray();
 
       beforeEach("insert folder", () => {
-        return db.into("noteful_folders").insert(testFolders);
+        return db.into("noteful_folder").insert(testFolders);
       });
 
       it("Responds with 204 and then removes the folders", () => {
