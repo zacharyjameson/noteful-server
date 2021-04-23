@@ -34,8 +34,7 @@ noteRouter
         });
       }
     }
-    newNote.modified = modified;
-
+    
     NoteService.insertNote(req.app.get("db"), newNote)
       .then((note) => {
         res
